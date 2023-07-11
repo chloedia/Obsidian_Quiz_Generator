@@ -17,8 +17,8 @@ In order to configure up the plugin, you must first set your OpenAI API key in t
 
 GPT-3 is capable of selecting important informations and create a set of question/ answer.
 The plugin can be accessed through the Obsidian ribbon on the left. 
-The plugin is also available through the Obsidian command "Create GPT-3 Quiz".(TODO)
-This can also be mapped to a keyboard shortcut. (TODO)
+The plugin is also available through the Obsidian command "Generate Quiz".
+This can also be mapped to a keyboard shortcut.
 You can ask for a specific number of questions, that will be save in a new note in the perfect format to use with the <a href = https://github.com/st3v3nmw/obsidian-spaced-repetition>spaced repetition</a> obsidian plug-in.
 
 ## Contributing
