@@ -75,23 +75,14 @@ export default class QuizGenPlugin extends Plugin {
             return null
         }
     }
-
-	async onload() {
-		this.defaultSettings = DEFAULT_SETTINGS;
-		await this.loadSettings();
-		//addIcon('genquiz', '')
-
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('checkbox-glyph', 'Quiz Generator', async (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			const activeFile = this.app.workspace.getActiveFile();
+	async generateQuiz() {
+		const activeFile = this.app.workspace.getActiveFile();
 			const activeView = this.getActiveView();
 			console.log(activeView)
 			if (activeView !== null) {
 			const editor = activeView.editor;
 			}
 			console.log("Creating the questions ...")
-			statusBarItemEl.setText('Generating Quiz ...');
 			var quizgen = new QuizGenerator(this.app, this)
 
 			var title;
@@ -107,7 +98,6 @@ export default class QuizGenPlugin extends Plugin {
 			}
 			let response: string = await quizgen.generate(title)
 			if (this.settings.prune) { response = await quizgen.prune_question(response) }
-			statusBarItemEl.setText('No Quiz Generation');
 
 			const content = "# Generated Quiz\n\n#flashcards\n" + response
 			console.log(title)
@@ -124,6 +114,20 @@ export default class QuizGenPlugin extends Plugin {
 			  }).open(); 
 
 			this.processing = false
+	}
+	async onload() {
+		this.defaultSettings = DEFAULT_SETTINGS;
+		await this.loadSettings();
+		//addIcon('genquiz', '')
+
+		// This creates an icon in the left ribbon.
+		const ribbonIconEl = this.addRibbonIcon('checkbox-glyph', 'Quiz Generator', async (evt: MouseEvent) => {
+			// Called when the user clicks the icon.
+			statusBarItemEl.setText('Generating Quiz ...');
+			this.generateQuiz();
+			statusBarItemEl.setText('No Quiz Generation');
+			this.processing = false
+
 			
 		});
 		// Perform additional things with the ribbon
@@ -133,27 +137,10 @@ export default class QuizGenPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('No Quiz Generation');
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-quizgen-modal-simple',
-			name: 'Open quizgen modal (simple)',
-			callback: () => {
-				new QuizGenModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
+			id: 'genquiz-modal',
+			name: 'Generate quiz',
 			checkCallback: (checking: boolean) => {
 				// Conditions to check
 				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -161,7 +148,9 @@ export default class QuizGenPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new QuizGenModal(this.app).open();
+						statusBarItemEl.setText('Generating Quiz ...');
+						this.generateQuiz();
+						statusBarItemEl.setText('No Quiz Generation');
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
