@@ -17,7 +17,8 @@ type Context= {
 	  system_prompt: string;
 	  prompt: string;
 	  n_questions: number;
-	promptsPath: string;
+	  prune: boolean;
+	  promptsPath: string;
 	  showStatusBar: boolean;
 	displayErrorInEditor: boolean;
 	outputToBlockQuote: boolean;

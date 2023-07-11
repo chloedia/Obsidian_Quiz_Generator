@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, request, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, request, Modal, Notice, Plugin, PluginSettingTab, Setting, addIcon } from 'obsidian';
 import {QuizGeneratorSettings,Context} from './types';
 import { openFile, createFileWithInput} from 'src/utils';
 import QuizGenerator from './quiz_generator';
@@ -18,8 +18,9 @@ const DEFAULT_SETTINGS: QuizGeneratorSettings= {
 	temperature: 0.7,
 	frequency_penalty: 0.5,
 	prompt: "",
-	system_prompt : "You are a quiz generator, you will be feed an input with the flag [INPUT] and you will give 5 set of question/answer based uniquely on this input in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where was the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"line\" : \"4-5\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information. Forget every exterior knowledge. Note that the [INPUT] is a written in markdown, hence the OUTPUT.answers have to be compatible to markdown. Don't forget that this character : \'\\\' is strictly banned and you must write it as \"\\\\\"",
-	n_questions : 5,
+	system_prompt : "You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give 5 set of question/answer based uniquely on this input in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where was the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"line\" : \"4-5\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information but try having elaborate answers. Forget every exterior knowledge. Note that the [INPUT] is a written in markdown, hence the OUTPUT.answers have to be compatible to markdown. Don't forget that this character : \'\\\' is strictly banned and you must write it as \"\\\\\"",
+	n_questions : 7,
+	prune : false,
 	showStatusBar: true,
 	outputToBlockQuote: false,
 	promptsPath:"textgenerator/prompts",
@@ -63,7 +64,7 @@ const DEFAULT_SETTINGS: QuizGeneratorSettings= {
 export default class QuizGenPlugin extends Plugin {
 	settings: QuizGeneratorSettings;
 	defaultSettings:QuizGeneratorSettings;
-	processing: true;
+	processing: boolean = false;
 	//TODO : Give the file where the cursor is (Not necessary) -> clear
 	getActiveView() {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -78,9 +79,10 @@ export default class QuizGenPlugin extends Plugin {
 	async onload() {
 		this.defaultSettings = DEFAULT_SETTINGS;
 		await this.loadSettings();
+		//addIcon('genquiz', '')
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Quiz Generator', async (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('checkbox-glyph', 'Quiz Generator', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			const activeFile = this.app.workspace.getActiveFile();
 			const activeView = this.getActiveView();
@@ -89,6 +91,7 @@ export default class QuizGenPlugin extends Plugin {
 			const editor = activeView.editor;
 			}
 			console.log("Creating the questions ...")
+			statusBarItemEl.setText('Generating Quiz ...');
 			var quizgen = new QuizGenerator(this.app, this)
 
 			var title;
@@ -102,7 +105,10 @@ export default class QuizGenPlugin extends Plugin {
 				logger('You have to select a file.');
 				title = "NewQuiz";
 			}
-			const response = await quizgen.generate(title)
+			let response: string = await quizgen.generate(title)
+			if (this.settings.prune) { response = await quizgen.prune_question(response) }
+			statusBarItemEl.setText('No Quiz Generation');
+
 			const content = "# Generated Quiz\n\n#flashcards\n" + response
 			console.log(title)
 			const suggestedPath = `${title}.md`
@@ -116,6 +122,8 @@ export default class QuizGenPlugin extends Plugin {
 				}
 				openFile(this.app,file);
 			  }).open(); 
+
+			this.processing = false
 			
 		});
 		// Perform additional things with the ribbon
@@ -123,14 +131,14 @@ export default class QuizGenPlugin extends Plugin {
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		statusBarItemEl.setText('No Quiz Generation');
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'open-quizgen-modal-simple',
+			name: 'Open quizgen modal (simple)',
 			callback: () => {
-				new SampleModal(this.app).open();
+				new QuizGenModal(this.app).open();
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
@@ -153,7 +161,7 @@ export default class QuizGenPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app).open();
+						new QuizGenModal(this.app).open();
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -163,16 +171,7 @@ export default class QuizGenPlugin extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.addSettingTab(new QuizGenSettingTab(this.app, this));
 	}
 
 	onunload() {
@@ -188,14 +187,14 @@ export default class QuizGenPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
+class QuizGenModal extends Modal {
 	constructor(app: App) {
 		super(app);
 	}
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!');
+		contentEl.setText('Welcome to a Generated Quiz world');
 	}
 
 	onClose() {
@@ -204,7 +203,7 @@ class SampleModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class QuizGenSettingTab extends PluginSettingTab {
 	plugin: QuizGenPlugin;
 
 	constructor(app: App, plugin: QuizGenPlugin) {
@@ -217,33 +216,26 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings the Awesome Quiz Generator Plugin.'});
+		containerEl.createEl('h2', {text: 'Settings of the Awesome Quiz Generator Plugin.'});
 
 		new Setting(containerEl)
 			.setName('Api Key')
-			.setDesc('It\'s a secret')
+			.setDesc('It\'s a secret 👀')
 			.addText(text => text
 				.setPlaceholder('Enter your Open AI API key')
 				.setValue(this.plugin.settings.api_key)
 				.onChange(async (value) => {
-					console.log('Secret: ' + value);
 					this.plugin.settings.api_key = value;
 					await this.plugin.saveSettings();
 				}));
-		//TODO : Slider is not really intuitive ...
 		new Setting(containerEl)
-				.setName('Number of questions')
-				.setDesc('Indicates the number of questions you want to generate')
-				.addSlider(n => n 
-					.setLimits(1,20,1)
-					.setValue(this.plugin.settings.n_questions)
+				.setName('Prune questions')
+				.setDesc('Limit the questions to generate to 10')
+				.addToggle(res => res
+					.setValue(false)
 					.onChange(async (value) => {
-						console.log('Secret: ' + value);
-						this.plugin.settings.n_questions = value;
+						this.plugin.settings.prune = value;
 						await this.plugin.saveSettings();
-					})
-					.setDynamicTooltip()
-					)
-				
+					}))					
 	}
 }

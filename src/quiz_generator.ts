@@ -8,18 +8,22 @@ const logger = debug('quizgenerator: QuizGenerator');
 export default class QuizGenerator{
     plugin: QuizGenPlugin;
     app: App;
+    n_gen_question : number;
 
     constructor(app: App, plugin: QuizGenPlugin) {
         this.app = app;
 		this.plugin = plugin;
+        this.n_gen_question = 0;
 	}
 
-    async generate(title: string) {
+    async generate(title: string):Promise<string> {
         logger(`Generating a Quiz on ${title}`);
+        console.log(this.plugin.processing)
         if (!this.plugin.processing) {
+            this.plugin.processing = true
             // We get the text of the app
             const currentFile = this.app.workspace.getActiveFile();
-            if (!currentFile) return;
+            if (!currentFile) return "";
     
             const content = await this.app.vault.read(currentFile);
     
@@ -27,10 +31,10 @@ export default class QuizGenerator{
             const chunks = this.preprocessText(content, 2000);
     
             // Get the responses for each chunk
-            const responses = [];
+            const responses: string[] = [];
             
     
-            for (const chunk of chunks) {
+            await Promise.all(chunks.map(async (chunk) =>{
 
                 console.log(chunk)
                 let trans_chunk = chunk.replace(/\"/gm, '*')
@@ -42,9 +46,10 @@ export default class QuizGenerator{
                 const response = await this.getQuizFromAPI(params);
                 console.log(response)
                 responses.push(response);
+                this.n_gen_question += 5;
                 // Delay the execution of each iteration by 3 seconds
                 //await this.delay(3000);
-            }
+            }))
     
             // Combine the responses
             const combinedResponse = this.combineResponses(responses);
@@ -52,9 +57,33 @@ export default class QuizGenerator{
             // Return the combined response
             return combinedResponse;
         } else {
+            new Notice("There is already another generation process");
             logger("generate error", "There is another generation process");
             return Promise.reject(new Error("There is another generation process"));
         }
+    }
+    async prune_question(text: string): Promise<string> {
+        console.log(`Currently Pruning to 10 questions ...`)
+        if (10 < this.n_gen_question){
+            // We preprocess the input text
+            const chunks = this.preprocessText(text, 2500);
+            console.log(chunks)
+
+            const chunk = `[INPUT] ${chunks[0]}`
+            let trans_chunk = chunk.replace(/\"/gm, '*')
+            trans_chunk = chunk.replace(/\'/gm, '_')
+
+            this.plugin.settings.prompt = this.getPrompt(trans_chunk);
+            this.plugin.settings.system_prompt = "You are a question selector, you will be feed an input flagged by [INPUT] with a questions ? answers format, based uniquely on this input select 10 questions in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where was the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"line\" : \"4-5\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information. Forget every exterior knowledge. Note that the [INPUT] is a written in markdown, hence the OUTPUT.answers have to be compatible to markdown. Don't forget that this character : \'\\\' is strictly banned and you must write it as \"\\\\\""
+            let reqformatter = new ReqFormatter(this.app, this.plugin);
+            const params = reqformatter.prepareReqParameters(this.plugin.settings, false);
+            const response = await this.getQuizFromAPI(params);
+            console.log(response)
+
+            return response 
+        }
+        return text
+
     }
     
     preprocessText(text: string, chunkSize: number): string[] {
@@ -84,31 +113,34 @@ export default class QuizGenerator{
     }
 
     getPrompt(content : string){
-        return '[INPUT]' + content
+        return '[INPUT][N_QUESTIONS = 5]' + content
     }
 
-    async getQuizFromAPI(params: any) {
+    async getQuizFromAPI(params: any, n_try: number = 0): Promise<string> {
+        // Send request to OpenAI's API to generate the quiz
+        let response = await request(params);
+        const response_json = JSON.parse(response);
+        response = response_json.choices[0].message.content
+
         try {
-          // Send request to OpenAI's API to generate the quiz
-          const response = await request(params);
-      
-          // Parse the response as JSON if it's a string
-          const parsedResponse = typeof response === "string" ? JSON.parse(response) : response;
-      
-          // Check the response status
-          if (parsedResponse.status < 200 || parsedResponse.status >= 300) {
-            throw new Error(`Failed to generate quiz. Status: ${parsedResponse.statusText}`);
-          }
-          // Extract the assistant response
-          let assistantResponse = parsedResponse.choices[0].message.content;
-          assistantResponse = await this.outputFormatting(assistantResponse)
+          let assistantResponse = await this.outputFormatting(response)
 
           // Return the assistant response
           return assistantResponse;
 
         } catch (error) {
-          console.error("An error occurred while generating the quiz:", error);
-          throw error;
+          n_try += 1
+          if (n_try > 4){
+            this.plugin.processing = false
+            new Notice("We are having trouble creating the quiz, please try again ...");
+            throw error}
+            
+          console.log(`N TRY : ${n_try} ! The json was not correct ... Reformulating ... ${error}`)
+          const new_prompt = `This is not a correct json ! Return a corrected version format (to help you the error is ${error}) : ${response}`
+    
+          params.prompt = new_prompt
+          const assistantResponse = this.getQuizFromAPI(params, n_try)
+          return assistantResponse
         }
       }
     
@@ -116,13 +148,18 @@ export default class QuizGenerator{
         console.log(input)
         //Function to format the output
         let result = "";
-        let transformedString: string = input.replace(/(?<!\\)\\(?!\\)/gm, '\\\\');
-        transformedString = transformedString.replace(/'/gm, "\"")
-        let jsonResult = JSON.parse(transformedString.replace('[OUTPUT]',""));
-        console.log(jsonResult)
+        let transformedString = input.replace('[OUTPUT]',"")
+        transformedString = transformedString.replace(/,(?=[}\]])/gm,"")
+
+        console.log(transformedString)
+
+        let jsonResult = JSON.parse(transformedString);
+        
 
         for (let entry of jsonResult.Questions) {
+            if (entry.answer != ""){
             result += `${JSON.stringify(entry.question).replace(/\\\\/gm,"\\")}\n?\n${JSON.stringify(entry.answer).replace(/\\\\/gm,"\\")}\n\n`
+            }
           }
 
         return result.replace(/\"/gm, '')
