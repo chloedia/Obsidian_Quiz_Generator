@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView, request, Modal, Notice, Plugin, PluginSettingTab, Setting, addIcon } from 'obsidian';
-import {QuizGeneratorSettings,Context} from './types';
+import {QuizGeneratorSettings} from './types';
 import { openFile, createFileWithInput} from 'src/utils';
 import QuizGenerator from './quiz_generator';
 import {SetPath } from './set_path'
@@ -8,56 +8,24 @@ import ReqFormatter from './req_formatter';
 
 import debug from "debug";
 const logger = debug('textgenerator:main');
+const SYSTEM_PROMPT = "You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets of question/answer for anki cards based uniquely on this input in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where were build the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"quote\" : \"The pyramids were built in Egypt in ... (line 1)\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information but try having elaborate answers (you are allowed to rephrase). Forget every exterior knowledge. Note that the [INPUT] is written in a markdown format, hence the OUTPUT.answers have to be compatible to markdown.",
+
 
 // Remember to rename these classes and interfaces!
 
-const DEFAULT_SETTINGS: QuizGeneratorSettings= {
+DEFAULT_SETTINGS: QuizGeneratorSettings= {
 	api_key: "",
 	engine: "gpt-3.5-turbo",
 	max_tokens: 1000,
 	temperature: 0.7,
 	frequency_penalty: 0.5,
 	prompt: "",
-	system_prompt : "You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give 5 set of question/answer based uniquely on this input in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where was the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"line\" : \"4-5\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information but try having elaborate answers. Forget every exterior knowledge. Note that the [INPUT] is a written in markdown, hence the OUTPUT.answers have to be compatible to markdown. Don't forget that this character : \'\\\' is strictly banned and you must write it as \"\\\\\"",
+	system_prompt : "You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets of question/answer for anki cards based uniquely on this input in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where were build the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"quote\" : \"The pyramids were built in Egypt in ... (line 1)\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information but try having elaborate answers (you are allowed to rephrase). Forget every exterior knowledge. Note that the [INPUT] is written in a markdown format, hence the OUTPUT.answers have to be compatible to markdown.",
 	n_questions : 7,
 	prune : false,
 	showStatusBar: true,
 	outputToBlockQuote: false,
 	promptsPath:"textgenerator/prompts",
-	context:{
-		includeTitle:false,
-		includeStaredBlocks:true,
-		includeFrontmatter:true,
-		includeHeadings:true,
-		includeChildren:false,
-		includeMentions:false,
-		includeHighlights:true
-	},
-	options:
-	{
-		"generate-text": true,
-		"generate-text-with-metadata": true,
-		"insert-generated-text-From-template": true,
-		"create-generated-text-From-template": false,
-		"insert-text-From-template": false,
-		"create-text-From-template": false,
-		"show-model-From-template": true,
-		"set_max_tokens": true,
-		"set-model": true,
-		"packageManager": true,
-		"create-template": false,
-		"get-title": true,
-		"auto-suggest": false,
-		"generated-text-to-clipboard-From-template": false,
-	},
-	autoSuggestOptions: {
-		status: true,
-		delay: 300,
-		numberOfSuggestions: 5,
-		triggerPhrase: "  ",
-		stop: ".",
-		showStatus: true
-	},
 	displayErrorInEditor: false
 }
 
@@ -76,44 +44,43 @@ export default class QuizGenPlugin extends Plugin {
         }
     }
 	async generateQuiz() {
+		this.settings.system_prompt = SYSTEM_PROMPT
 		const activeFile = this.app.workspace.getActiveFile();
-			const activeView = this.getActiveView();
-			console.log(activeView)
-			if (activeView !== null) {
+		const activeView = this.getActiveView();
+		if (activeView !== null) {
 			const editor = activeView.editor;
 			}
-			console.log("Creating the questions ...")
-			var quizgen = new QuizGenerator(this.app, this)
+		console.log("Creating the questions ...")
+		var quizgen = new QuizGenerator(this.app, this)
 
-			var title;
-			if (activeFile !== null){
-				console.log('OK')
+		var title;
+		if (activeFile !== null){
 				title = `${activeFile.basename} Quiz`;
 			}
 
 
-			else{
-				logger('You have to select a file.');
-				title = "NewQuiz";
+		else{
+			logger('You have to select a file.');
+			title = "NewQuiz";
+		}
+		let response: string = await quizgen.generate(title)
+		if (this.settings.prune) { response = await quizgen.prune_question(response) }
+
+		const content = "# Generated Quiz\n\n#flashcards\n" + response
+		console.log(title)
+		const suggestedPath = `${title}.md`
+
+		//Open a new note and write string
+		new SetPath(this.app,suggestedPath,async (path: string) => {
+			const [errorFile,file]= await safeAwait(createFileWithInput(path,content,this.app));
+			if(errorFile) {
+				logger("createTemplate error",errorFile);
+				return Promise.reject(errorFile);
 			}
-			let response: string = await quizgen.generate(title)
-			if (this.settings.prune) { response = await quizgen.prune_question(response) }
+			openFile(this.app,file);
+			}).open(); 
 
-			const content = "# Generated Quiz\n\n#flashcards\n" + response
-			console.log(title)
-			const suggestedPath = `${title}.md`
-
-			//Open a new note and write string
-			new SetPath(this.app,suggestedPath,async (path: string) => {
-				const [errorFile,file]= await safeAwait(createFileWithInput(path,content,this.app));
-				if(errorFile) {
-					logger("createTemplate error",errorFile);
-					return Promise.reject(errorFile);
-				}
-				openFile(this.app,file);
-			  }).open(); 
-
-			this.processing = false
+		this.processing = false
 	}
 	async onload() {
 		this.defaultSettings = DEFAULT_SETTINGS;
@@ -219,9 +186,9 @@ class QuizGenSettingTab extends PluginSettingTab {
 				}));
 		new Setting(containerEl)
 				.setName('Prune questions')
-				.setDesc('Limit the questions to generate to 10')
+				.setDesc('Limit to 10 the number of generated flashcards')
 				.addToggle(res => res
-					.setValue(false)
+					.setValue(this.plugin.settings.prune)
 					.onChange(async (value) => {
 						this.plugin.settings.prune = value;
 						await this.plugin.saveSettings();
