@@ -44,6 +44,7 @@ export default class QuizGenerator{
                 let reqformatter = new ReqFormatter(this.app, this.plugin);
                 const params = reqformatter.prepareReqParameters(this.plugin.settings, false);
                 const response = await this.getQuizFromAPI(params);
+
                 console.log(response)
                 responses.push(response);
                 this.n_gen_question += 5;
@@ -64,20 +65,22 @@ export default class QuizGenerator{
     }
     async prune_question(text: string): Promise<string> {
         console.log(`Currently Pruning to 10 questions ...`)
-        if (10 < this.n_gen_question){
+        if (this.n_gen_question > 10){
             // We preprocess the input text
-            const chunks = this.preprocessText(text, 2500);
-            console.log(chunks)
+            console.log(text)
+            //const chunks = this.preprocessText(text, 2500);
+            //console.log(chunks)
 
-            const chunk = `[INPUT] ${chunks[0]}`
+            //const chunk = `[INPUT] ${chunks[0]}`
+            const chunk = text
             let trans_chunk = chunk.replace(/\"/gm, '*')
             trans_chunk = chunk.replace(/\'/gm, '_')
 
             this.plugin.settings.prompt = this.getPrompt(trans_chunk);
-            this.plugin.settings.system_prompt = "You are a question selector, you will be feed an input flagged by [INPUT] with a questions ? answers format, based uniquely on this input select 10 questions in the following json format \:\" [OUTPUT]{\"Questions\" : [{ \"question\" : \"Where was the pyramids ?\",\n \"answer\" : \"In Egypt.\", \n \"line\" : \"4-5\" }, ... ]} }\". In a json, the attribute name MUST be '\"' and not '\''. All the questions must have their response in the input text, don't add additional information. Forget every exterior knowledge. Note that the [INPUT] is a written in markdown, hence the OUTPUT.answers have to be compatible to markdown. Don't forget that this character : \'\\\' is strictly banned and you must write it as \"\\\\\""
+            this.plugin.settings.system_prompt = "You are a question selector, you will be feed an input flagged by [INPUT] with a set of \"questions ? answers\" format for anki cards, based uniquely on this input select 10 sets of question/answer and return them in the same format as the input. All the questions must have their response in the input text, don't add additional information."
             let reqformatter = new ReqFormatter(this.app, this.plugin);
             const params = reqformatter.prepareReqParameters(this.plugin.settings, false);
-            const response = await this.getQuizFromAPI(params);
+            const response = await this.getQuizFromAPI(params, 0, true);
             console.log(response)
 
             return response 
@@ -116,11 +119,14 @@ export default class QuizGenerator{
         return '[INPUT][N_QUESTIONS = 5]' + content
     }
 
-    async getQuizFromAPI(params: any, n_try: number = 0): Promise<string> {
+    async getQuizFromAPI(params: any, n_try: number = 0, prune : boolean = false): Promise<string> {
         // Send request to OpenAI's API to generate the quiz
         let response = await request(params);
         const response_json = JSON.parse(response);
         response = response_json.choices[0].message.content
+        if (prune){
+            return response
+        }
 
         try {
           let assistantResponse = await this.outputFormatting(response)
@@ -158,7 +164,7 @@ export default class QuizGenerator{
 
         for (let entry of jsonResult.Questions) {
             if (entry.answer != ""){
-            result += `${JSON.stringify(entry.question).replace(/\\\\/gm,"\\")}\n?\n${JSON.stringify(entry.answer).replace(/\\\\/gm,"\\")}\n\n`
+            result += `${JSON.stringify(entry.question).replace(/\\\\/gm,"\\")}\n?\n${JSON.stringify(entry.answer).replace(/\\\\/gm,"\\")} (Exact Quote : \"${entry.quote != ""? entry.quote : "NA"})\"\n\n`
             }
           }
 

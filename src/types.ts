@@ -1,53 +1,17 @@
-type Context= {
-	includeTitle:boolean;
-	includeStaredBlocks:boolean;
-	includeFrontmatter:boolean;
-	includeHeadings:boolean;
-	includeChildren:boolean;
-	includeMentions:boolean;
-	includeHighlights:boolean;
-  }
-  
-  type QuizGeneratorSettings= {
-	  api_key: string;
-	  engine: string;
-	  max_tokens: number;
-	  temperature: number;
-	  frequency_penalty: number;
-	  system_prompt: string;
-	  prompt: string;
-	  n_questions: number;
-	  prune: boolean;
-	  promptsPath: string;
-	  showStatusBar: boolean;
-	displayErrorInEditor: boolean;
-	outputToBlockQuote: boolean;
-	context:Context;
-	options:
-	  {
-		  "generate-text": boolean,
-		  "generate-text-with-metadata": boolean,
-		  "insert-generated-text-From-template": boolean,
-		  "create-generated-text-From-template": boolean,
-		  "insert-text-From-template": boolean,
-		  "create-text-From-template": boolean,
-		  "show-model-From-template": boolean,
-		  "set_max_tokens": boolean,
-		  "set-model": boolean,
-		  "packageManager": boolean,
-		  "create-template": boolean,
-		  "get-title": boolean,
-	  "auto-suggest": boolean,
-	  "generated-text-to-clipboard-From-template": boolean
-	  },
-	autoSuggestOptions: {
-	  status: boolean,
-	  delay: number,
-		  numberOfSuggestions: number,
-		  triggerPhrase: string,
-		  stop: string,
-	  showStatus: boolean,
-	  },
+    type QuizGeneratorSettings= {
+		api_key: string;
+		engine: string;
+		max_tokens: number;
+		temperature: number;
+		frequency_penalty: number;
+		system_prompt: string;
+		prompt: string;
+		n_questions: number;
+		prune: boolean;
+		promptsPath: string;
+		showStatusBar: boolean;
+		displayErrorInEditor: boolean;
+		outputToBlockQuote: boolean;
   }
   
   type QuizGeneratorConfiguration = {
@@ -107,7 +71,6 @@ type Context= {
 	PromptTemplate,
 	PackageTemplate,
 	Model,
-	Context,
 	InstalledPackage,
 	QuizGeneratorConfiguration
   }
