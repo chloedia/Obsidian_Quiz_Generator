@@ -63,8 +63,11 @@ export default class QuizGenPlugin extends Plugin {
 			logger('You have to select a file.');
 			title = "NewQuiz";
 		}
-		let response: string = await quizgen.generate(title)
-		if (this.settings.prune) { response = await quizgen.prune_question(response) }
+		let responses: string[] = await quizgen.generate(title)
+		if (this.settings.prune) { 
+			responses = await quizgen.prune_question(responses)
+		 }
+		const response = responses.join('\n');
 
 		const content = "# Generated Quiz\n\n#flashcards\n" + response
 		console.log(title)
@@ -117,8 +120,8 @@ export default class QuizGenPlugin extends Plugin {
 					if (!checking) {
 						statusBarItemEl.setText('Generating Quiz ...');
 						this.generateQuiz();
-						statusBarItemEl.setText('No Quiz Generation');
 					}
+					statusBarItemEl.setText('No Quiz Generation');
 
 					// This command will only show up in Command Palette when the check function returns true
 					return true;

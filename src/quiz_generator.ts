@@ -3,7 +3,9 @@ import QuizGenPlugin from './main'
 import debug from "debug";
 import ReqFormatter from './req_formatter';
 import { TIMEOUT } from 'dns';
+var _ = require('underscore');
 const logger = debug('quizgenerator: QuizGenerator');
+
 
 export default class QuizGenerator{
     plugin: QuizGenPlugin;
@@ -16,14 +18,14 @@ export default class QuizGenerator{
         this.n_gen_question = 0;
 	}
 
-    async generate(title: string):Promise<string> {
+    async generate(title: string):Promise<string[]> {
         logger(`Generating a Quiz on ${title}`);
         console.log(this.plugin.processing)
         if (!this.plugin.processing) {
             this.plugin.processing = true
             // We get the text of the app
             const currentFile = this.app.workspace.getActiveFile();
-            if (!currentFile) return "";
+            if (!currentFile) return [""];
     
             const content = await this.app.vault.read(currentFile);
     
@@ -31,7 +33,7 @@ export default class QuizGenerator{
             const chunks = this.preprocessText(content, 2000);
     
             // Get the responses for each chunk
-            const responses: string[] = [];
+            let responses: string[] = [];
             
     
             await Promise.all(chunks.map(async (chunk) =>{
@@ -46,47 +48,29 @@ export default class QuizGenerator{
                 const response = await this.getQuizFromAPI(params);
 
                 console.log(response)
-                responses.push(response);
+                responses = [...responses, ...response]
                 this.n_gen_question += 5;
                 // Delay the execution of each iteration by 3 seconds
                 //await this.delay(3000);
             }))
     
             // Combine the responses
-            const combinedResponse = this.combineResponses(responses);
+            //const combinedResponse = this.combineResponses(responses);
     
             // Return the combined response
-            return combinedResponse;
+            return responses;
         } else {
             new Notice("There is already another generation process");
             logger("generate error", "There is another generation process");
             return Promise.reject(new Error("There is another generation process"));
         }
     }
-    async prune_question(text: string): Promise<string> {
+    async prune_question(text: string[]): Promise<string[]> {
         console.log(`Currently Pruning to 10 questions ...`)
         if (this.n_gen_question > 10){
-            // We preprocess the input text
-            console.log(text)
-            //const chunks = this.preprocessText(text, 2500);
-            //console.log(chunks)
-
-            //const chunk = `[INPUT] ${chunks[0]}`
-            const chunk = text
-            let trans_chunk = chunk.replace(/\"/gm, '*')
-            trans_chunk = chunk.replace(/\'/gm, '_')
-
-            this.plugin.settings.prompt = this.getPrompt(trans_chunk);
-            this.plugin.settings.system_prompt = "You are a question selector, you will be feed an input flagged by [INPUT] with a set of \"questions ? answers\" format for anki cards, based uniquely on this input select 10 sets of question/answer and return them in the same format as the input. All the questions must have their response in the input text, don't add additional information."
-            let reqformatter = new ReqFormatter(this.app, this.plugin);
-            const params = reqformatter.prepareReqParameters(this.plugin.settings, false);
-            const response = await this.getQuizFromAPI(params, 0, true);
-            console.log(response)
-
-            return response 
+            return _.sample(text, 10)
         }
         return text
-
     }
     
     preprocessText(text: string, chunkSize: number): string[] {
@@ -119,14 +103,11 @@ export default class QuizGenerator{
         return '[INPUT][N_QUESTIONS = 5]' + content
     }
 
-    async getQuizFromAPI(params: any, n_try: number = 0, prune : boolean = false): Promise<string> {
+    async getQuizFromAPI(params: any, n_try: number = 0): Promise<string[]> {
         // Send request to OpenAI's API to generate the quiz
         let response = await request(params);
         const response_json = JSON.parse(response);
         response = response_json.choices[0].message.content
-        if (prune){
-            return response
-        }
 
         try {
           let assistantResponse = await this.outputFormatting(response)
@@ -153,7 +134,7 @@ export default class QuizGenerator{
       async outputFormatting(input: string){
         console.log(input)
         //Function to format the output
-        let result = "";
+        let result:string[] = [];
         let transformedString = input.replace('[OUTPUT]',"")
         transformedString = transformedString.replace(/,(?=[}\]])/gm,"")
 
@@ -164,11 +145,12 @@ export default class QuizGenerator{
 
         for (let entry of jsonResult.Questions) {
             if (entry.answer != ""){
-            result += `${JSON.stringify(entry.question).replace(/\\\\/gm,"\\")}\n?\n${JSON.stringify(entry.answer).replace(/\\\\/gm,"\\")} (Exact Quote : \"${entry.quote != ""? entry.quote : "NA"})\"\n\n`
+            let new_set = `${JSON.stringify(entry.question).replace(/\\\\/gm,"\\")}\n?\n${JSON.stringify(entry.answer).replace(/\\\\/gm,"\\")} (Exact Quote : \"${entry.quote != ""? entry.quote : "NA"})\"\n\n`;
+            result.push(new_set.replace(/\"/gm, ''));
             }
           }
 
-        return result.replace(/\"/gm, '')
+        return result;
 
     }
     delay(ms: number): Promise<void> {
