@@ -3,9 +3,9 @@
 	"name": "Quiz Gen Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "This is a quiz generator plugin for Obsidian. This plugin let's you generate important questions on your note.",
+	"author": "ChloeDia",
+	"authorUrl": "https://github.com/chloedia",
+	"fundingUrl": "https://www.buymeacoffee.com/chloedia",
 	"isDesktopOnly": false
 }
