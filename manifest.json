@@ -1,6 +1,6 @@
 {
-	"id": "obsidian-quiz-gen-plugin",
-	"name": "Quiz Gen Plugin",
+	"id": "flashcard-gen",
+	"name": "Flashcard Generator",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "This is a quiz generator plugin for Obsidian. This plugin let's you generate important questions on your note.",
