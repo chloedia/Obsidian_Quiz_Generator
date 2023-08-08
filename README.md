@@ -23,3 +23,8 @@ This can also be mapped to a keyboard shortcut.
 
 Don't hesitate to contribute if you want to add new features, we are adapting it for GPT-4 and soon it will be able to use your own LLM if you are running it locally.  
 
+## Helpful links
+
+The plugin architecture was inspired by the obsidian (text-generator-plugin)[https://github.com/nhaouari/obsidian-textgenerator-plugin]
+
+
