@@ -70,7 +70,6 @@ export default class QuizGenPlugin extends Plugin {
 		const response = responses.join('\n');
 
 		const content = "# Generated Quiz\n\n#flashcards\n" + response
-		console.log(title)
 		const suggestedPath = `${title}.md`
 
 		//Open a new note and write string

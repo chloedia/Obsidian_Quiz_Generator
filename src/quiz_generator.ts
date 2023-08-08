@@ -20,7 +20,6 @@ export default class QuizGenerator{
 
     async generate(title: string):Promise<string[]> {
         logger(`Generating a Quiz on ${title}`);
-        console.log(this.plugin.processing)
         if (!this.plugin.processing) {
             this.plugin.processing = true
             // We get the text of the app
@@ -38,7 +37,6 @@ export default class QuizGenerator{
     
             await Promise.all(chunks.map(async (chunk) =>{
 
-                console.log(chunk)
                 let trans_chunk = chunk.replace(/\"/gm, '*')
                 trans_chunk = chunk.replace(/\'/gm, '_')
 
@@ -47,7 +45,6 @@ export default class QuizGenerator{
                 const params = reqformatter.prepareReqParameters(this.plugin.settings, false);
                 const response = await this.getQuizFromAPI(params);
 
-                console.log(response)
                 responses = [...responses, ...response]
                 this.n_gen_question += 5;
                 // Delay the execution of each iteration by 3 seconds
@@ -132,13 +129,11 @@ export default class QuizGenerator{
       }
     
       async outputFormatting(input: string){
-        console.log(input)
         //Function to format the output
         let result:string[] = [];
         let transformedString = input.replace('[OUTPUT]',"")
         transformedString = transformedString.replace(/,(?=[}\]])/gm,"")
 
-        console.log(transformedString)
 
         let jsonResult = JSON.parse(transformedString);
         
