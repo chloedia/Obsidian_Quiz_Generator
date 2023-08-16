@@ -15,7 +15,7 @@ import debug from "debug";
 
 const logger = debug("textgenerator:main");
 
-const SYSTEM_PROMPT = `You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets
+/* const SYSTEM_PROMPT = `You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets
  of question/answer for anki cards based uniquely on this input in the following json format:
  " [OUTPUT]{"Questions" : [{ "key_info" : "The obitore are a community from the south west of asia that are selling erasers",
 	\n"question" : "What are the obitore ? ",
@@ -26,11 +26,12 @@ const SYSTEM_PROMPT = `You are a quiz generator, you will be feed an input with 
    In a json, the attribute name MUST be \'"\' and not \'\'\'. All the questions must have their response in the input text,
     don\'t add additional information but try having elaborate answers (you are allowed to rephrase). 
 	Forget every exterior knowledge. Note that the [INPUT] is written in a markdown format, hence the OUTPUT.answers 
-	have to be compatible to markdown. If there are not enough information in the token return an empty json.`;
+	have to be compatible to markdown. If there are not enough information in the token return an empty json.`; */
+const SYSTEM_PROMPT = "You are a Anki Flashcard generator."
 
 const DEFAULT_SETTINGS: QuizGeneratorSettings = {
 	api_key: "",
-	engine: "gpt-3.5-turbo",
+	engine: "gpt-3.5-turbo",//gpt-3.5-turbo
 	max_tokens: 1000,
 	temperature: 0.7,
 	frequency_penalty: 0.5,
@@ -188,6 +189,17 @@ class QuizGenSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		new Setting(containerEl)
+				.setName("Model")
+				.addDropdown((choice) =>
+				choice
+					.addOption("gpt-3.5-turbo","gpt-3.5-turbo")
+					.addOption("gpt-4", "gpt-4")
+					.setValue("gpt-3.5-turbo")
+					.onChange(async (value) => {
+						this.plugin.settings.engine = value;
+						await this.plugin.saveSettings();
+					}))
 		new Setting(containerEl)
 			.setName("Prune questions")
 			.setDesc("Limit to 10 the number of generated flashcards")

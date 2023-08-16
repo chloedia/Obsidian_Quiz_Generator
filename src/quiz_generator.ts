@@ -8,7 +8,6 @@ import debug from "debug";
 import ReqFormatter from "./req_formatter";
 import * as _ from 'underscore';
 
-
 const logger = debug("quizgenerator: QuizGenerator");
 
 export default class QuizGenerator {
@@ -111,9 +110,26 @@ export default class QuizGenerator {
 		return responses.join("\n");
 	}
 
-	getPrompt(content: string) {
+	/* getPrompt(content: string) {
 		return "[INPUT]" + content;
+	} */
+	getPrompt(content: string){
+		return `Give sets
+		of question/answer for anki cards based uniquely on this input in the following json format:
+		" [OUTPUT]{"Questions" : [{ "key_info" : "The obitore are a community from the south west of asia that are selling erasers",
+		   \n"question" : "What are the obitore ? ",
+		   \n"answer" : "A community from the south west of asia know for selling erasers.",
+		   \n"quote" : "The obitore are a community from the south west of asia that are selling erasers[...] (line 4)"}, ... ]} }".
+		   The key_info property must be a quote from the given text.
+		   If you ask a question that depends on a specific context/conditions, precise it in the question.
+		  In a json, the attribute name MUST be \'"\' and not \'\'\'. All the questions must have their response in the input text,
+		   don\'t add additional information but try having elaborate answers (you are allowed to rephrase). 
+		   Forget every exterior knowledge. Note that the text is written in a markdown format and can contain mathematical formulas, hence the OUTPUT.answers 
+		   have to be compatible with markdown. If there are not enough information in the token return an empty json. 
+		   Text : ${content}`
 	}
+
+
 
 	async getQuizFromAPI(params: any, n_try = 0): Promise<string[]> {
 		// Send request to OpenAI's API to generate the quiz
