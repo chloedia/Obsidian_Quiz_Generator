@@ -23,6 +23,7 @@ export default class QuizGenerator {
 
 	async generate(title: string): Promise<string[]> {
 		logger(`Generating a Quiz on ${title}`);
+		let counter = 0
 		if (!this.plugin.processing) {
 			this.plugin.processing = true;
 			// We get the text of the app
@@ -54,7 +55,8 @@ export default class QuizGenerator {
 					const response = await this.getQuizFromAPI(params);
 
 					responses = [...responses, ...response];
-					this.n_gen_question += 5;
+					counter += 1
+					console.log(`Generated flashcard on ${counter} / ${chunks.length}`)
 					// Delay the execution of each iteration by 3 seconds
 					//await this.delay(3000);
 				})
@@ -102,7 +104,6 @@ export default class QuizGenerator {
 		if (currentChunk !== "") {
 			chunks.push(currentChunk.trim());
 		}
-		console.log(chunks)
 		return chunks;
 	}
 
@@ -173,7 +174,6 @@ export default class QuizGenerator {
 		let transformedString = input.replace("[OUTPUT]", "");
 		transformedString = transformedString.replace(/,(?=[}\]])/gm, "");
 
-		console.log(transformedString)
 		if (transformedString == "{}"){
 			return [""]
 		}
@@ -188,8 +188,8 @@ export default class QuizGenerator {
 				)}\n?\n${JSON.stringify(entry.answer).replace(
 					/\\\\/gm,
 					"\\"
-				)} (Exact Quote : "${
-					(entry.key_info != "") && (!entry.key_info.includes("pyramids")) ? entry.key_info : "NA"
+				)} *(Exact Quote : "${
+					(entry.key_info != "") && (!entry.key_info.includes("pyramids")) ? `${entry.key_info}*` : "NA"
 				})"\n\n`;
 				result.push(new_set.replace(/"/gm, ""));
 			}
