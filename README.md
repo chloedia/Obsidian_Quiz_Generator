@@ -1,30 +1,32 @@
 # Obsidian FlashCard Generator
 <a href="https://www.buymeacoffee.com/chloedia" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+🚀 Supercharge your Obsidian workflow with QuizCraft, the revolutionary Obsidian plugin designed to transform your notes into dynamic flashcards. Seamlessly harness the power of LLMs, such as GPT-3 or GPT-4, to effortlessly generate customized flashcards from your notes. Prepare for exams, retain crucial information, and enhance your learning experience like never before.
 
-This plugin improves your Obsidian workflow by helping you generate a quiz that directly fits in the <a href = https://github.com/st3v3nmw/obsidian-spaced-repetition>spaced repetition</a> obsidian plug-in based on your notes using OpenAI's GPT-3 language model. 
+## Features
+
+- 📚 Generate quizzes that seamlessly integrate with the [Spaced Repetition](https://github.com/st3v3nmw/obsidian-spaced-repetition) Obsidian plugin.
+- 🎯 Effortlessly transform your notes into curated quizzes tailored to your learning needs.
 
 ## Setup
 
-In order to configure up the plugin, you must first set your OpenAI API key in the plugin settings.
-
-1. Generate an OpenAI API key [here](https://beta.openai.com/account/api-keys).
-2. In Obsidian, go to `Settings` and select `Quiz Gen Plugin` from the `Community Plugins` folder in the left menu. (Not out yet)
-3. Set your key in the `OpenAI API Key` field.
-4. Choose if you want to limit to 10 questions.
+1. 🔑 Obtain your OpenAI API key from [here](https://beta.openai.com/account/api-keys).
+2. ⚙️ Access the plugin settings in Obsidian by navigating to `Settings` > `Flashcard Generator` under `Community Plugins` (coming soon).
+3. 🛠️ Enter your OpenAI API key in the designated field.
+4. 🔢 Choose whether to limit the number of questions to 10.
 
 ## Usage
 
-GPT-3 is capable of selecting important informations and create a set of question/ answer. Just click on your note and launch the process by clicking on the Plugin Icon. Don't hesitate to verify that the questions are relevant for you.
-The plugin can be accessed through the Obsidian ribbon on the left. 
-The plugin is also available through the Obsidian command "Create GPT-3 Quiz"
-This can also be mapped to a keyboard shortcut.
+Create comprehensive quizzes with ease:
+- 📝 Click the plugin icon while viewing your note to initiate the process.
+- ✅ Validate the relevance of generated questions for your study.
+- 🚀 Access the plugin via the Obsidian ribbon or use the "Create GPT-3 Quiz" command, customizable with a keyboard shortcut.
 
 ## Contributing
 
-Don't hesitate to contribute if you want to add new features, we are adapting it for GPT-4 and soon it will be able to use your own LLM if you are running it locally.  
+Join us in enhancing QuizCraft:
+- 💡 Contribute to new feature development.
+- 🔜 Look forward to **Customizable Learning:** Craft flashcards that align perfectly with your study objectives. Specify the level of detail, format, and content you want on your cards, giving you complete control over your learning journey.
 
-## Helpful links
+## Links
 
-The plugin architecture was inspired by the obsidian (text-generator-plugin)[https://github.com/nhaouari/obsidian-textgenerator-plugin]
-
-
+Inspired by the code architecture of the [obsidian-textgenerator-plugin](https://github.com/nhaouari/obsidian-textgenerator-plugin).

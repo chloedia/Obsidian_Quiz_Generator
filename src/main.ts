@@ -132,10 +132,8 @@ export default class QuizGenPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						statusBarItemEl.setText("Generating Quiz ...");
 						this.generateQuiz();
 					}
-					statusBarItemEl.setText("No Quiz Generation");
 
 					// This command will only show up in Command Palette when the check function returns true
 					return true;
@@ -172,10 +170,6 @@ class QuizGenSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
-		containerEl.createEl("h2", {
-			text: "Settings of the Awesome Quiz Generator Plugin.",
-		});
 
 		new Setting(containerEl)
 			.setName("Api Key")
