@@ -15,7 +15,7 @@ export class SetPath extends Modal {
 		logger("onOpen");
 		const { contentEl } = this;
 
-		contentEl.createEl("h1", { text: "New Document Path" });
+		contentEl.createEl("h1", { text: "Create new Quiz Note" });
 		setTimeout(() => {
 			contentEl.addEventListener("keyup", async (event) => {
 				event.preventDefault();
@@ -25,7 +25,7 @@ export class SetPath extends Modal {
 						this.close();
 					} catch (error) {
 						new Notice(
-							"🔴Error: File already exists. Choose another path."
+							"🔴 Error: File already exists. Choose another path."
 						);
 						console.error(error);
 					}
