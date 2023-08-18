@@ -3,7 +3,7 @@
 	"name": "Flashcard Generator",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Craft insightful quizzes: Generate key questions/answers pairs from your notes effortlessly. Elevate and optimize your learning journey.",
+	"description": "Craft insightful quizzes: Generate key questions/answers pairs from your notes effortlessly using Open ai's GPT-3/4. Elevate and optimize your learning journey.",
 	"author": "ChloeDia",
 	"authorUrl": "https://github.com/chloedia",
 	"fundingUrl": "https://www.buymeacoffee.com/chloedia",
