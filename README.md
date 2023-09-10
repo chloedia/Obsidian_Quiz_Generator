@@ -12,9 +12,10 @@
 ## Setup
 
 1. 🔑 Obtain your OpenAI API key from [here](https://beta.openai.com/account/api-keys).
-2. ⚙️ Access the plugin settings in Obsidian by navigating to `Settings` > `Flashcard Generator` under `Community Plugins` (coming soon).
+2. ⚙️ Access the plugin settings in Obsidian by navigating to `Settings` > `Flashcard Generator` under `Community Plugins`.
 3. 🛠️ Enter your OpenAI API key in the designated field.
-4. 🔢 Choose whether to limit the number of questions to 10.
+4. 💻 Choose which model (gpt3.5 or gpt4) you want to use.
+5. 🔢 Choose whether to limit the number of questions to 10.
 
 ## Usage
 
