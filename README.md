@@ -1,6 +1,5 @@
 # Obsidian FlashCard Generator
 
-<a href="https://www.buymeacoffee.com/chloedia" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 🚀 **Supercharge your Obsidian workflow with QuizCraft**, the revolutionary Obsidian plugin designed to **transform your notes into dynamic flashcards**. Seamlessly harness the power of LLMs, such as GPT-3 or GPT-4, to effortlessly generate customized flashcards from your notes. Prepare for exams, retain crucial information, and enhance your learning experience like never before.
 
