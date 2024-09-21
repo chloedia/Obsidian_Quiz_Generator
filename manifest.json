@@ -1,11 +1,11 @@
 {
-	"id": "flashcard-gen",
-	"name": "Flashcard Generator",
-	"version": "1.0.0",
+	"id": "flashcard-gen-local",
+	"name": "Flashcard Local Generator",
+	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Craft insightful quizzes: Generate key questions/answers pairs from your notes effortlessly using Open ai's GPT-3/4. Elevate and optimize your learning journey.",
-	"author": "ChloeDia",
-	"authorUrl": "https://github.com/chloedia",
-	"fundingUrl": "https://www.buymeacoffee.com/chloedia",
+	"description": "Craft insightful quizzes: Generate key questions/answers pairs from your notes effortlessly using Open ai's GPT-3/4 or local models. Elevate and optimize your learning journey.",
+	"author": "ChloeDia (improved by lulmer)",
+	"authorUrl": "https://github.com/lulmer",
+	"fundingUrl": "https://github.com/lulmer",
 	"isDesktopOnly": false
 }

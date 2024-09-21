@@ -1,4 +1,7 @@
 type QuizGeneratorSettings = {
+	selectedOllamaModel: string;
+	ollamaModels: any;
+	useLocalLLM: boolean;
 	api_key: string;
 	engine: string;
 	max_tokens: number;

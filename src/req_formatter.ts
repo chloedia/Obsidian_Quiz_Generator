@@ -2,6 +2,7 @@ import { App } from "obsidian";
 import { QuizGeneratorSettings } from "./types";
 import QuizGenPlugin from "./main";
 import debug from "debug";
+import { Stream } from "stream";
 const logger = debug("quizgenerator:ReqFormatter");
 
 export type ChatGPTAgent = "assistant" | "user" | "system";
@@ -27,20 +28,36 @@ export default class ReqFormatter {
 		insertMetadata: boolean,
 		templatePath = "",
 		additionnalParams: any = {},
-		role: ChatGPTAgent = "assistant"
+		role: ChatGPTAgent = "user"
 	) {
 		logger("prepareReqParameters", params, insertMetadata, templatePath);
+
+		let model, reqUrl, reqExtractResult;
+        if (params.useLocalLLM) {
+            logger("useLocalLLM");
+			
+            model = params.selectedOllamaModel;
+            reqUrl = "http://localhost:11434/v1/chat/completions";
+			reqExtractResult = "requestResults?.choices[0].message.content";
+        } else {
+            logger("useChatGPT");
+            reqUrl = "https://api.openai.com/v1/chat/completions";
+            model = params.engine;
+			reqExtractResult = "requestResults?.choices[0].message.content";
+        }
+	
 		let bodyParams: any = {
-			model: params.engine,
+			model: model,
 			max_tokens: 3000,
 			temperature: params.temperature,
 			frequency_penalty: params.frequency_penalty,
+			stream: false,
 		};
 
-		//const chatModels = ["gpt-3.5-turbo", "gpt-3.5-turbo-0301", "gpt-4"];
+		// Add ctx_length to bodyParams for local LLM only
 
-		const reqUrl = "https://api.openai.com/v1/chat/completions";
-		const reqExtractResult = "requestResults?.choices[0].message.content";
+		//const chatModels = ["gpt-3.5-turbo", "gpt-3.5-turbo-0301", "gpt-4"];
+		//const reqUrl = "https://api.openai.com/v1/chat/completions";
 		bodyParams["messages"] = [
 			{ role: "system", content: params.system_prompt },
 			{ role: role, content: params.prompt },
@@ -61,6 +78,7 @@ export default class ReqFormatter {
 
 		reqParams = { ...reqParams, ...additionnalParams?.reqParams };
 		reqParams.body = JSON.stringify(bodyParams);
+		console.log("Body Params ", bodyParams["messages"]);
 		logger("prepareReqParameters", { bodyParams, reqParams });
 		return reqParams;
 	}
