@@ -7,6 +7,7 @@ import QuizGenPlugin from "./main";
 import debug from "debug";
 import ReqFormatter from "./req_formatter";
 import * as _ from 'underscore';
+import { stringify } from "querystring";
 
 const logger = debug("quizgenerator: QuizGenerator");
 
@@ -52,6 +53,8 @@ export default class QuizGenerator {
 						this.plugin.settings,
 						false
 					);
+					console.log("Creating the questions ...");
+					console.log("params : ", params)
 					const response = await this.getQuizFromAPI(params);
 
 					responses = [...responses, ...response];
@@ -136,18 +139,27 @@ export default class QuizGenerator {
 		// Send request to OpenAI's API to generate the quiz
 		let response = await request(params);
 		const response_json = JSON.parse(response);
+		console.log("JSON PARSING: ", response);
 		response = response_json.choices[0].message.content;
 		response = response.replace(/(?<!\\)\\(?=[a-zA-Z])/gm, "\\\\")
 		let assistantResponse = [""]
+		let cleanJson;
+		let parsedJson;
 
 		try {
-			assistantResponse = await this.outputFormatting(response);
-
+			cleanJson = await this.cleanString(response);
+			parsedJson = JSON.parse(cleanJson);
+			//assistantResponse = await this.outputFormatting(response);
+			console.log(
+				`JSON is parsed succesfully`
+			);
+			assistantResponse = await this.stringifyJson(parsedJson);
+			
 			// Return the assistant response
 			return assistantResponse;
 		} catch (error) {
 			n_try += 1;
-			if (n_try > 1) {
+			if (n_try > 3) {
 				this.plugin.processing = false;
 				new Notice(
 					"We are having trouble creating the quiz, some part of the text might not have flashcards please try again by selecting a specific part of the text."
@@ -159,7 +171,7 @@ export default class QuizGenerator {
 			console.log(
 				`N TRY : ${n_try} ! The json was not correct ... Reformulating ... ${error}`
 			);
-			const new_prompt = `This is not a correct json ! Return a corrected version format (to help you the error is ${error}) : ${response}`;
+			const new_prompt = `This is not a correct json ! Return a corrected version format of \n#this JSON : ${cleanJson} \n#Hint :(to help you the error is ${error})\n Respond with a JSON ONLY`;
 
 			params.prompt = new_prompt;
 			assistantResponse = await this.getQuizFromAPI(params, n_try);
@@ -168,7 +180,36 @@ export default class QuizGenerator {
 		}
 	}
 
-	async outputFormatting(input: string) {
+	async stringifyJson(jsonResult: any){
+		const result: string[] = [];
+		for (const entry of jsonResult.Questions) {
+			if (entry.answer != "" && entry.answer != "null" ) {
+				const new_set = `${JSON.stringify(entry.question).replace(
+					/\\\\/gm,
+					"\\"
+				)}\n?\n${JSON.stringify(entry.answer).replace(
+					/\\\\/gm,
+					"\\"
+				)} *(Exact Quote : "${
+					(entry.key_info != "") && (!entry.key_info.includes("pyramids")) ? `${entry.key_info}*` : "NA"
+				})"\n\n`;
+				result.push(new_set.replace(/"/gm, ""));
+			}
+		}
+		return result;
+	}
+
+	async cleanString(input: string) {
+		// Remove the outer double quotes
+		const jsonWithoutQuotes = this.stripEncasingQuotes(input);
+		console.log("step1\n",jsonWithoutQuotes);
+		// Convert escaped double quotes to actual double quotes
+		const cleanedJson = jsonWithoutQuotes.replace(/\\"/g, '"');
+		console.log("step2\n",cleanedJson);
+		return cleanedJson;
+	}
+
+	async outputFormatting2(input: string) {
 		//Function to format the output
 		const result: string[] = [];
 		let transformedString = input.replace("[OUTPUT]", "");
@@ -197,7 +238,41 @@ export default class QuizGenerator {
 
 		return result;
 	}
+
+	stripEncasingQuotes(str: string): string {
+		// Find the first '{' and the last '}' to isolate the JSON
+		const firstBrace = str.indexOf('{');
+		const lastBrace = str.lastIndexOf('}');
+	
+		if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+			// If no valid braces are found, or they are in the wrong order, return the original string
+			return str;
+		}
+	
+		// Extract the JSON substring, including the found braces
+		return str.substring(firstBrace, lastBrace + 1);
+	}
+	
+	
+	async outputFormatting(input: string) {
+		// Remove the initial text and extra newlines
+		const jsonPart = input.split('\n\n')[1];
+		console.log("step1\n",jsonPart);
+		// Remove the outer double quotes
+		const jsonWithoutQuotes = this.stripEncasingQuotes(jsonPart);
+		console.log("step2\n",jsonWithoutQuotes);
+		// Convert escaped double quotes to actual double quotes
+		const cleanedJson = jsonWithoutQuotes.replace(/\\"/g, '"');
+		console.log("step3\n",cleanedJson);
+		// Parse the JSON
+		const result = JSON.parse(cleanedJson);
+		return result;
+	}
+
+
 	delay(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 }
+
+

@@ -15,7 +15,7 @@ import debug from "debug";
 
 const logger = debug("textgenerator:main");
 
-/* const SYSTEM_PROMPT = `You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets
+const SYSTEM_PROMPT = `You are a quiz generator, you will be feed an input with the flags [INPUT] and you will give sets
  of question/answer for anki cards based uniquely on this input in the following json format:
  " [OUTPUT]{"Questions" : [{ "key_info" : "The obitore are a community from the south west of asia that are selling erasers",
 	\n"question" : "What are the obitore ? ",
@@ -26,10 +26,13 @@ const logger = debug("textgenerator:main");
    In a json, the attribute name MUST be \'"\' and not \'\'\'. All the questions must have their response in the input text,
     don\'t add additional information but try having elaborate answers (you are allowed to rephrase). 
 	Forget every exterior knowledge. Note that the [INPUT] is written in a markdown format, hence the OUTPUT.answers 
-	have to be compatible to markdown. If there are not enough information in the token return an empty json.`; */
-const SYSTEM_PROMPT = "You are a Anki Flashcard generator."
+	have to be compatible to markdown. If there are not enough information in the token return an empty json.`; 
+//const SYSTEM_PROMPT = "You are a Anki Flashcard generator."
 
 const DEFAULT_SETTINGS: QuizGeneratorSettings = {
+	selectedOllamaModel: "",
+	ollamaModels: "",
+	useLocalLLM: true,
 	api_key: "",
 	engine: "gpt-3.5-turbo",//gpt-3.5-turbo
 	max_tokens: 1000,
@@ -159,51 +162,102 @@ export default class QuizGenPlugin extends Plugin {
 }
 
 class QuizGenSettingTab extends PluginSettingTab {
-	plugin: QuizGenPlugin;
+    plugin: QuizGenPlugin;
 
-	constructor(app: App, plugin: QuizGenPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    constructor(app: App, plugin: QuizGenPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
 
-	display(): void {
-		const { containerEl } = this;
+    display(): void {
+        const { containerEl } = this;
 
-		containerEl.empty();
+        containerEl.empty();
 
-		new Setting(containerEl)
-			.setName("Api Key")
-			.setDesc("It's a secret 👀")
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter your Open AI API key")
-					.setValue(this.plugin.settings.api_key)
-					.onChange(async (value) => {
-						this.plugin.settings.api_key = value;
-						await this.plugin.saveSettings();
-					})
-			);
-		new Setting(containerEl)
-				.setName("Model")
-				.addDropdown((choice) =>
-				choice
-					.addOption("gpt-3.5-turbo","gpt-3.5-turbo")
-					.addOption("gpt-4", "gpt-4")
-					.setValue("gpt-3.5-turbo")
-					.onChange(async (value) => {
-						this.plugin.settings.engine = value;
-						await this.plugin.saveSettings();
-					}))
-		new Setting(containerEl)
-			.setName("Prune questions")
-			.setDesc("Limit to 10 the number of generated flashcards")
-			.addToggle((res) =>
-				res
-					.setValue(this.plugin.settings.prune)
-					.onChange(async (value) => {
-						this.plugin.settings.prune = value;
-						await this.plugin.saveSettings();
-					})
-			);
-	}
+        // Toggle between using OpenAI and Ollama
+        new Setting(containerEl)
+            .setName("Use Local LLM (Ollama)")
+            .setDesc("Toggle between using OpenAI and Ollama")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.useLocalLLM)
+                    .onChange(async (value) => {
+                        this.plugin.settings.useLocalLLM = value;
+                        await this.plugin.saveSettings();
+                        this.display();  // Refresh display based on the toggle
+                    })
+            );
+
+        if (this.plugin.settings.useLocalLLM) {
+            // Ollama specific settings
+            this.fetchAndDisplayOllamaSettings();
+        } else {
+            // OpenAI specific settings
+            this.displayOpenAISettings();
+        }
+    }
+
+    displayOpenAISettings(): void {
+        const { containerEl } = this;
+        
+        new Setting(containerEl)
+            .setName("API Key")
+            .setDesc("It's a secret 👀")
+            .addText((text) =>
+                text
+                    .setPlaceholder("Enter your Open AI API key")
+                    .setValue(this.plugin.settings.api_key)
+                    .onChange(async (value) => {
+                        this.plugin.settings.api_key = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName("Model")
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("gpt-3.5-turbo", "gpt-3.5-turbo")
+                    .addOption("gpt-4", "gpt-4")
+                    .setValue(this.plugin.settings.engine)
+                    .onChange(async (value) => {
+                        this.plugin.settings.engine = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
+    }
+
+    async fetchAndDisplayOllamaSettings(): Promise<void> {
+        const { containerEl } = this;
+        try {
+            const response = await fetch('http://localhost:11434/api/tags');
+            const data = await response.json();
+            this.plugin.settings.ollamaModels = data.models;
+        } catch (error) {
+            console.error("Failed to fetch models:", error);
+            this.plugin.settings.ollamaModels = []; // Reset if fetch fails
+        }
+
+        this.displayOllamaSettings();
+    }
+
+    displayOllamaSettings(): void {
+        const { containerEl } = this;
+        
+        new Setting(containerEl)
+            .setName("Available Models")
+            .setDesc("Select a model from Ollama")
+            .addDropdown((dropdown) => {
+                this.plugin.settings.ollamaModels.forEach(model => {
+                    dropdown.addOption(model.name, `${model.name} - ${model.details.parameter_size}`);
+                });
+                dropdown.setValue(this.plugin.settings.selectedOllamaModel)
+                    .onChange(async (value) => {
+                        this.plugin.settings.selectedOllamaModel = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+    }
 }
+
+
