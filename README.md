@@ -37,6 +37,4 @@ Join us in enhancing QuizCraft:
 - 🔜 Look forward to **Customizable Learning:** Craft flashcards that align perfectly with your study objectives. Specify the level of detail, format, and content you want on your cards, giving you complete control over your learning journey.
 
 ## Links
-This code is a fork from Obsidian Quiz Generator plugin from ChloeDia with extra logic to handle local LLMs and better JSON handling, credits goes to her.
-
 Inspired by the code architecture of the [obsidian-textgenerator-plugin](https://github.com/nhaouari/obsidian-textgenerator-plugin).
