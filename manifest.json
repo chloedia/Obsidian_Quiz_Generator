@@ -1,7 +1,7 @@
 {
 	"id": "flashcard-gen",
 	"name": "Flashcard Generator",
-	"version": "1.1.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Craft insightful quizzes: Generate key questions/answers pairs from your notes effortlessly using Open ai's GPT-3/4 or local models. Elevate and optimize your learning journey.",
 	"author": "ChloeDia (improved by lulmer)",
