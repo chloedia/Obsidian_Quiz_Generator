@@ -23,8 +23,9 @@
 3. ✅  Toggle the "Use Local LLM" option if you want to use local models instead of OpenAI.
 4. 💻 Choose which model from ollama you want to use (you need to run a Model from Ollama first).
 
-## Usage
+⚠ You might have a CORS issue, to fix it, go in you terminal and run ```export OLLAMA_ORIGINS="app://obsidian.md*"```(mac/linux) or ```SETX /M OLLAMA_ORIGINS "app://obsidian.md*```on Windows
 
+## Usage
 Create comprehensive quizzes with ease:
 - 📝 Click the plugin icon while viewing your note to initiate the process.
 - ✅ Validate the relevance of generated questions for your study.
