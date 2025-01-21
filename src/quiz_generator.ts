@@ -1,4 +1,4 @@
-import { App, Notice } from "obsidian";
+import { App, Notice, requestUrl } from "obsidian";
 import QuizGenPlugin from "./main";
 import debug from "debug";
 import * as _ from "underscore";
@@ -35,13 +35,6 @@ export default class QuizGenerator {
         this.plugin = plugin;
         this.n_gen_question = 0;
 
-        // Configure local vs. remote LLM
-        this.client = new OpenAI({
-            apiKey: this.plugin.settings.useLocalLLM ? "ollama" : this.plugin.settings.api_key,
-            baseURL: this.plugin.settings.useLocalLLM ? "http://localhost:11434/v1" : "https://api.openai.com/v1",
-            dangerouslyAllowBrowser: true,
-            
-        });
     }
 
     public async generate(title: string): Promise<string[]> {
@@ -143,6 +136,7 @@ export default class QuizGenerator {
             ]
         }.
         The "question"/"answer"/"quote" properties must reflect data found in the text (no outside info). Note that the text is in markdown format and the response must be compatible (headers, lists, formulas, links, images, etc.).
+        For the question, provide the most context as possible (section name, title, etc...)
         Respond with only valid JSON. 
         --- TEXT ---
         ${content}`;
@@ -152,31 +146,49 @@ export default class QuizGenerator {
      * Sends a request to the OpenAI API and attempts to parse the response using the QuizSchema.
      */
     private async getQuizFromAPI(settings: QuizGeneratorSettings): Promise<Quiz | null> {
-        try {
-            const completion = await this.client.beta.chat.completions.parse({
-                model: settings.useLocalLLM ? settings.selectedOllamaModel : settings.engine,
+    try {
+        const baseURL = settings.useLocalLLM ? "http://localhost:11434/v1" : "https://api.openai.com/v1";
+        const apiKey = settings.useLocalLLM ? "ollama" : this.plugin.settings.api_key;
+        const model = settings.useLocalLLM ? settings.selectedOllamaModel : settings.engine;
+
+        const response = await requestUrl({
+            url: `${baseURL}/chat/completions`,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
                 messages: [
                     {
                         role: "system",
-                        content:
-                            "You are an Anki Flashcard Generator, and you only return valid JSON that follows the requested schema.",
+                        content: "You are an Anki Flashcard Generator, and you only return valid JSON that follows the requested schema."
                     },
-                    { role: "user", content: settings.prompt },
+                    { role: "user", content: settings.prompt }
                 ],
-                response_format: zodResponseFormat(QuizSchema, "quiz_schema"),
-            });
+                temperature: 0,
+                response_format: zodResponseFormat(QuizSchema, "quiz_cards"),
+            })
+                
+        });
 
-            const message = completion.choices[0]?.message;
-            if (message?.parsed) {
-                logger("Parsed quiz data:", message.parsed);
-                return message.parsed as Quiz;
+        if (response.status === 200) {
+            const data = response.json;
+            const message = data.choices[0]?.message;
+            if (message?.content) {
+                const parsed = JSON.parse(message.content);
+                logger("Parsed quiz data:", parsed);
+                return parsed as Quiz;
             }
-            return null;
-        } catch (error) {
-            logger("Error fetching quiz data:", error);
-            return null;
         }
+        return null;
+    } catch (error) {
+
+        logger("Error fetching quiz data:", error);
+        return null;
     }
+}
 
     async stringifyJson(jsonResult: Quiz): Promise<string[]> {
 		const result: string[] = [];
