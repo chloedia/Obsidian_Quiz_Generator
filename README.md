@@ -1,7 +1,13 @@
-# Obsidian Local FlashCard Generator
+<p align="center">
+    <img src="images/logo.png" alt="QuizCraft Logo" width="300"/>
+</p>
 
+<h1 align="center">Obsidian FlashCard Generator</h1>
 
-🚀 **Supercharge your Obsidian workflow with QuizCraft**, the revolutionary Obsidian plugin designed to **transform your notes into dynamic flashcards**. Seamlessly harness the power of LLMs, such as GPT-3 or GPT-4, or any OSS LLM to effortlessly generate customized flashcards from your notes. Prepare for exams, retain crucial information, and enhance your learning experience like never before.
+<p align="center">
+    🚀 <strong>Supercharge your Obsidian workflow</strong>, the revolutionary Obsidian plugin designed to <strong>transform your notes into dynamic flashcards</strong>. Seamlessly harness the power of LLMs, such as GPT-4o, or any OSS LLM to effortlessly generate customized flashcards from your notes. Prepare for exams, retain crucial information, and enhance your learning experience like never before.
+</p>
+
 
 ## Features
 
@@ -14,7 +20,7 @@
 2. ⚙️ Access the plugin settings in Obsidian by navigating to `Settings` > `Flashcard Generator` under `Community Plugins`.
 3. ✅ Untoggle the "Use Local LLM" option if you want OpenAI.
 4. 🛠️ Enter your OpenAI API key in the designated field.
-5. 💻 Choose which model (gpt3.5 or gpt4) you want to use.
+5. 💻 Choose which model (gpt-4o or gpt-4o-mini) you want to use.
 6. 🔢 Choose whether to limit the number of questions to 10.
    
 ### Local LLM 
