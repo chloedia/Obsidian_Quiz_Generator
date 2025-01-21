@@ -5,7 +5,9 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	requestUrl,
 } from "obsidian";
+
 import { QuizGeneratorSettings } from "./types";
 import { openFile, createFileWithInput } from "src/utils";
 import QuizGenerator from "./quiz_generator";
@@ -217,8 +219,8 @@ class QuizGenSettingTab extends PluginSettingTab {
             .setName("Model")
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption("gpt-3.5-turbo", "gpt-3.5-turbo")
-                    .addOption("gpt-4", "gpt-4")
+					.addOption("gpt-4o", "gpt-4o")
+					.addOption("gpt-4o-mini", "gpt-4o-mini")
                     .setValue(this.plugin.settings.engine)
                     .onChange(async (value) => {
                         this.plugin.settings.engine = value;
@@ -227,19 +229,20 @@ class QuizGenSettingTab extends PluginSettingTab {
             );
     }
 
-    async fetchAndDisplayOllamaSettings(): Promise<void> {
-        const { containerEl } = this;
-        try {
-            const response = await fetch('http://localhost:11434/api/tags');
-            const data = await response.json();
-            this.plugin.settings.ollamaModels = data.models;
-        } catch (error) {
-            console.error("Failed to fetch models:", error);
-            this.plugin.settings.ollamaModels = []; // Reset if fetch fails
-        }
+	async fetchAndDisplayOllamaSettings(): Promise<void> {
+		try {
+			const response = await requestUrl({
+				url: 'http://localhost:11434/api/tags',
+				method: 'GET'
+			});
+			this.plugin.settings.ollamaModels = response.json.models;
+		} catch (error) {
+			console.error("Failed to fetch models:", error);
+			this.plugin.settings.ollamaModels = []; // Reset if fetch fails
+		}
 
-        this.displayOllamaSettings();
-    }
+		this.displayOllamaSettings();
+	}
 
     displayOllamaSettings(): void {
         const { containerEl } = this;
@@ -248,7 +251,7 @@ class QuizGenSettingTab extends PluginSettingTab {
             .setName("Available Models")
             .setDesc("Select a model from Ollama")
             .addDropdown((dropdown) => {
-                this.plugin.settings.ollamaModels.forEach(model => {
+				this.plugin.settings.ollamaModels.forEach((model: { name: string; details: { parameter_size: string } }) => {
                     dropdown.addOption(model.name, `${model.name} - ${model.details.parameter_size}`);
                 });
                 dropdown.setValue(this.plugin.settings.selectedOllamaModel)

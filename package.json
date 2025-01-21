@@ -27,7 +27,9 @@
 	},
 	"dependencies": {
 		"debug": "^4.3.4",
+		"openai": "^4.79.1",
 		"safe-await": "^2.0.0",
-		"underscore": "^1.13.6"
+		"underscore": "^1.13.6",
+		"zod": "^3.24.1"
 	}
 }
