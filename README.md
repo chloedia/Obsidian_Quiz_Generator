@@ -27,7 +27,7 @@
 1. 🛠️ Install Ollama from [here](https://ollama.com/) and follow the instructions to install it locally.
 2. ⚙️ Access the plugin settings in Obsidian by navigating to `Settings` > `Flashcard Generator` under `Community Plugins`.
 3. ✅  Toggle the "Use Local LLM" option if you want to use local models instead of OpenAI.
-4. 💻 Choose which model from ollama you want to use (you need to run a Model from Ollama first).
+4. 💻 Choose which model from ollama you want to use (you need to pull the Model from Ollama first) - We recommend using llama3, knoopx/hermes-2-pro-mistral, or models certified being able to generate structured output.
 
 ## Usage
 
